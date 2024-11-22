@@ -4,27 +4,27 @@ services:
     restart: always
     ports:
       - "5432:5432"
+    user: postgres
     environment:
-      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
       - test-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready -U postgres"]
+      test: [ "CMD", "pg_isready" ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - default
+      - be
 
-  api:
+  be:
     build:
       context: .
     restart: always
     ports:
       - "8080:8080"
     networks:
-      - default
+      - be
     depends_on:
       db:
         condition: service_healthy
@@ -33,5 +33,5 @@ volumes:
   test-db-data:
 
 networks:
-  default:
+  be:
     driver: bridge

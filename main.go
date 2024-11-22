@@ -1,22 +1,32 @@
 package main
 
 import (
-	"context"
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq"
+	"log"
+	"net/http"
 	"time"
 )
 
 func main() {
 	db, err := sql.Open("postgres",
-		"host=db port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
+		"host=host.docker.internal port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err = db.PingContext(ctx); err != nil {
-		panic(err)
-	}
+	http.HandleFunc("/ping", func(writer http.ResponseWriter, request *http.Request) {
+		start := time.Now()
+		if err := db.Ping(); err != nil {
+			fmt.Fprintf(writer, "Error: %s\n", err.Error())
+			return
+		}
+		fmt.Fprintf(writer, "Pong!\n")
+		log.Printf("Ping took %dms\n", time.Since(start).Milliseconds())
+	})
+
+	port := "8080"
+	log.Println("Listening on :" + port)
+	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
